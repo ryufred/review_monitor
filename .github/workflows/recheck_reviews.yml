@@ -1,0 +1,28 @@
+name: Recheck Reviews (수동 실행 전용)
+
+on:
+  workflow_dispatch:  # Actions 탭에서 버튼 눌러 수동으로만 실행
+
+jobs:
+  recheck:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 저장소 체크아웃
+        uses: actions/checkout@v4
+
+      - name: Python 설정
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: 패키지 설치
+        run: |
+          pip install gspread google-auth requests anthropic
+
+      - name: 기존 리뷰 재검토 실행
+        env:
+          GCP_SERVICE_ACCOUNT_JSON: ${{ secrets.GCP_SERVICE_ACCOUNT_JSON }}
+          SPREADSHEET_ID: ${{ secrets.SPREADSHEET_ID }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          python recheck_reviews.py

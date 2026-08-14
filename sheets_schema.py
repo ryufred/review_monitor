@@ -208,3 +208,33 @@ def delete_client(client_ws, name: str):
         return False
     client_ws.delete_rows(row_idx)
     return True
+
+
+def delete_client_data(review_ws, history_ws, client_name: str):
+    """특정 고객사와 관련된 리뷰마스터/리뷰통계이력 행을 전부 삭제.
+    행 번호가 뒤에서부터 삭제되어야 인덱스가 안 꼬이므로, 높은 행번호부터 지운다."""
+    deleted_reviews = 0
+    deleted_history = 0
+
+    for ws, name_col_header in [(review_ws, "고객사명"), (history_ws, "고객사명")]:
+        all_values = ws.get_all_values()
+        if not all_values:
+            continue
+        header = all_values[0]
+        if name_col_header not in header:
+            continue
+        name_idx = header.index(name_col_header)
+
+        rows_to_delete = [
+            row_idx for row_idx, row in enumerate(all_values[1:], start=2)
+            if len(row) > name_idx and row[name_idx].strip() == client_name.strip()
+        ]
+
+        for row_idx in sorted(rows_to_delete, reverse=True):
+            ws.delete_rows(row_idx)
+            if ws is review_ws:
+                deleted_reviews += 1
+            else:
+                deleted_history += 1
+
+    return deleted_reviews, deleted_history

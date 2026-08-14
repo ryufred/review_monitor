@@ -5,7 +5,7 @@
 import re
 import pandas as pd
 import streamlit as st
-from sheets_schema import ensure_schema, add_client, update_client, delete_client, TEAMS, normalize_for_search
+from sheets_schema import ensure_schema, add_client, update_client, delete_client, delete_client_data, TEAMS, normalize_for_search
 from style import inject_css, page_header
 
 inject_css()
@@ -17,9 +17,8 @@ if "client_page_notice" in st.session_state:
 
 
 @st.cache_resource
-def _get_client_ws():
-    client_ws, _, _ = ensure_schema()
-    return client_ws
+def _get_workspaces():
+    return ensure_schema()  # client_ws, review_ws, history_ws
 
 
 def _extract_id_from_url(platform: str, raw: str) -> str:
@@ -37,7 +36,7 @@ def _extract_id_from_url(platform: str, raw: str) -> str:
     return m.group(1) if m else raw
 
 
-client_ws = _get_client_ws()
+client_ws, review_ws, history_ws = _get_workspaces()
 
 
 @st.cache_data(ttl=30)
@@ -122,8 +121,11 @@ with tab_list:
 
                     if deleted:
                         delete_client(client_ws, name)
+                        n_reviews, n_history = delete_client_data(review_ws, history_ws, name)
                         st.cache_data.clear()
-                        st.session_state["client_page_notice"] = f"'{name}'가 삭제되었습니다."
+                        st.session_state["client_page_notice"] = (
+                            f"'{name}'가 삭제되었습니다. (관련 리뷰 {n_reviews}건, 이력 {n_history}건도 함께 삭제됨)"
+                        )
                         st.toast("삭제 완료", icon="🗑️")
                         st.rerun()
 

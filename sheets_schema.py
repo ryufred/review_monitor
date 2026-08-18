@@ -15,7 +15,7 @@ SCOPES = [
 CLIENT_SHEET = "고객사설정"
 CLIENT_HEADERS = ["고객사명", "활성여부", "구글_PlaceID", "카카오_장소ID", "네이버_플레이스ID", "담당부서", "담당자"]
 
-TEAMS = ["본사1팀", "본사2팀", "마포지사", "브마팀", "경영지원팀"]
+TEAMS = ["본사1팀", "본사2팀", "마포지사", "브마팀", "경영지원팀", "중부지사", "부산지사", "서초지사"]
 
 
 def normalize_for_search(text: str) -> str:

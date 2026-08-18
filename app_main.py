@@ -9,7 +9,7 @@ from sheets_schema import ensure_schema, TEAMS, REVIEW_SHEET, open_spreadsheet
 from style import inject_css, page_header
 
 inject_css()
-page_header("고객사 리뷰 모니터링", "카카오맵 원문 수집 + 네이버 리뷰수/별점 변화 추적 (구글은 수기 확인)")
+page_header("고객사 리뷰 모니터링", "카카오맵 원문 수집 + 네이버 리뷰수/별점 변화 추적")
 
 
 @st.cache_data(ttl=30)

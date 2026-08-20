@@ -92,7 +92,18 @@ with tab_list:
             name = client.get("고객사명", "")
             team_label = client.get("담당부서", "") or "미배정"
             manager_label = client.get("담당자", "") or "미배정"
+            kakao_id_for_link = str(client.get("카카오_장소ID", "")).strip()
+            naver_id_for_link = str(client.get("네이버_플레이스ID", "")).strip()
+
             with st.expander(f"{'🟢' if str(client.get('활성여부')).upper() == 'TRUE' else '⚪'} {name} · {team_label} · {manager_label}"):
+                link_col1, link_col2 = st.columns(2)
+                with link_col1:
+                    if kakao_id_for_link:
+                        st.markdown(f"[📍 카카오맵 바로가기](https://place.map.kakao.com/{kakao_id_for_link})")
+                with link_col2:
+                    if naver_id_for_link:
+                        st.markdown(f"[📍 네이버플레이스 바로가기](https://map.naver.com/p/entry/place/{naver_id_for_link})")
+
                 with st.form(f"edit_form_{idx}_{name}"):
                     col1, col2 = st.columns(2)
                     with col1:

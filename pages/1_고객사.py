@@ -5,7 +5,10 @@
 import re
 import pandas as pd
 import streamlit as st
-from sheets_schema import ensure_schema, add_client, update_client, delete_client, delete_client_data, TEAMS, normalize_for_search
+from sheets_schema import (
+    ensure_schema, add_client, update_client, delete_client, delete_client_data,
+    find_duplicate_client_names, remove_duplicate_clients, TEAMS, normalize_for_search,
+)
 from style import inject_css, page_header
 
 inject_css()
@@ -49,6 +52,18 @@ tab_list, tab_add, tab_bulk = st.tabs(["📋 고객사 목록", "➕ 고객사 �
 with tab_list:
     clients = _load_clients()
 
+    # 중복된 고객사명 감지 및 경고
+    duplicates = find_duplicate_client_names(client_ws)
+    if duplicates:
+        dup_names = ", ".join(duplicates.keys())
+        st.warning(f"⚠️ 중복된 고객사입니다: **{dup_names}** (같은 이름이 시트에 여러 줄 등록되어 있어요)")
+        if st.button("🧹 중복 자동 정리 (각 이름당 가장 먼저 등록된 1개만 남기고 나머지 삭제)"):
+            removed = remove_duplicate_clients(client_ws)
+            st.cache_data.clear()
+            st.session_state["client_page_notice"] = f"중복 {removed}건을 정리했습니다."
+            st.toast("중복 정리 완료", icon="🧹")
+            st.rerun()
+
     if not clients:
         st.info("등록된 고객사가 없습니다. '고객사 추가' 탭에서 추가해주세요.")
     else:
@@ -73,30 +88,30 @@ with tab_list:
         if not filtered:
             st.info("조건에 맞는 고객사가 없습니다.")
 
-        for client in filtered:
+        for idx, client in enumerate(filtered):
             name = client.get("고객사명", "")
             team_label = client.get("담당부서", "") or "미배정"
             manager_label = client.get("담당자", "") or "미배정"
             with st.expander(f"{'🟢' if str(client.get('활성여부')).upper() == 'TRUE' else '⚪'} {name} · {team_label} · {manager_label}"):
-                with st.form(f"edit_form_{name}"):
+                with st.form(f"edit_form_{idx}_{name}"):
                     col1, col2 = st.columns(2)
                     with col1:
                         new_active = st.checkbox(
                             "모니터링 활성화", value=str(client.get("활성여부")).upper() == "TRUE",
-                            key=f"active_{name}",
+                            key=f"active_{idx}_{name}",
                         )
                         current_team = client.get("담당부서", "")
                         team_index = TEAMS.index(current_team) if current_team in TEAMS else 0
-                        new_team = st.selectbox("담당 부서", TEAMS, index=team_index, key=f"team_{name}")
+                        new_team = st.selectbox("담당 부서", TEAMS, index=team_index, key=f"team_{idx}_{name}")
                         new_manager = st.text_input(
-                            "담당자", value=client.get("담당자", ""), placeholder="예: 프레드", key=f"manager_{name}"
+                            "담당자", value=client.get("담당자", ""), placeholder="예: 프레드", key=f"manager_{idx}_{name}"
                         )
                     with col2:
                         new_kakao = st.text_input(
-                            "카카오맵 URL 또는 ID", value=client.get("카카오_장소ID", ""), key=f"kakao_{name}"
+                            "카카오맵 URL 또는 ID", value=client.get("카카오_장소ID", ""), key=f"kakao_{idx}_{name}"
                         )
                         new_naver = st.text_input(
-                            "네이버플레이스 URL 또는 ID", value=client.get("네이버_플레이스ID", ""), key=f"naver_{name}"
+                            "네이버플레이스 URL 또는 ID", value=client.get("네이버_플레이스ID", ""), key=f"naver_{idx}_{name}"
                         )
 
                     save_col, delete_col = st.columns([1, 1])

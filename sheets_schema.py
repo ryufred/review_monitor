@@ -201,6 +201,31 @@ def update_client(client_ws, original_name, name=None, google_id=None, kakao_id=
     return True
 
 
+def find_duplicate_client_names(client_ws) -> dict:
+    """중복된 고객사명과 각각의 행 번호 목록을 반환. 예: {'애드리절트': [2, 5]}"""
+    names = client_ws.col_values(1)[1:]  # 헤더 제외
+    seen = {}
+    for row_idx, name in enumerate(names, start=2):
+        name = name.strip()
+        if not name:
+            continue
+        seen.setdefault(name, []).append(row_idx)
+    return {name: rows for name, rows in seen.items() if len(rows) > 1}
+
+
+def remove_duplicate_clients(client_ws) -> int:
+    """중복된 고객사명 중 첫 번째 행만 남기고 나머지를 삭제. 삭제된 행 수를 반환."""
+    duplicates = find_duplicate_client_names(client_ws)
+    rows_to_delete = []
+    for name, rows in duplicates.items():
+        rows_to_delete.extend(rows[1:])  # 첫 번째(가장 위) 행만 남기고 나머지 삭제 대상
+
+    for row_idx in sorted(rows_to_delete, reverse=True):
+        client_ws.delete_rows(row_idx)
+
+    return len(rows_to_delete)
+
+
 def delete_client(client_ws, name: str):
     """고객사 행을 삭제."""
     row_idx = _find_client_row(client_ws, name)
